@@ -3,15 +3,13 @@ from bs4 import BeautifulSoup
 import re
 import json
 import pandas as pd
-from fake_useragent import UserAgent
-
+from faker import Faker
 
 result = []
 
-
 def get_soup_retry(url):
-    ua = UserAgent()
-    uag_random = ua.random
+    fake = Faker()
+    uag_random = fake.user_agent()
 
     header = {
         'User-Agent': uag_random,
@@ -23,7 +21,7 @@ def get_soup_retry(url):
         assert page.status_code == 200
         soup = BeautifulSoup(page.content, 'lxml')
         if 'captcha' in str(soup):
-            uag_random = ua.random
+            uag_random = fake.user_agent()
             print(f'\rBot has been detected... retrying ... use new identity: {uag_random} ', end='', flush=True)
             continue
         else:
@@ -33,8 +31,10 @@ def get_soup_retry(url):
 
 def get_detail(url):
     soup = get_soup_retry(url)
-
-    title = soup.find('span', attrs={'id': 'productTitle'}).text.strip()  # to get the text, and strip is used to remove all the leading and trailing spaces from a string.
+    try:
+        title = soup.find('span', attrs={'id': 'productTitle'}).text.strip()  # to get the text, and strip is used to remove all the leading and trailing spaces from a string.
+    except AttributeError:
+        title = ''
     try:
         discount_percent = soup.find('td', attrs={'class': 'a-span12 a-color-price a-size-base'}).find('span', attrs={
             'class': 'a-color-price'}).text.split('(')[1].replace(')', '')
